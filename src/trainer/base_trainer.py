@@ -20,8 +20,10 @@ class BaseTrainer:
         model,
         criterion,
         metrics,
-        optimizer,
-        lr_scheduler,
+        optimizer_g,
+        optimizer_d,
+        lr_scheduler_g,
+        lr_scheduler_d,
         config,
         device,
         dataloaders,
@@ -68,8 +70,10 @@ class BaseTrainer:
 
         self.model = model
         self.criterion = criterion
-        self.optimizer = optimizer
-        self.lr_scheduler = lr_scheduler
+        self.optimizer_g = optimizer_g
+        self.optimizer_d = optimizer_d
+        self.lr_scheduler_g = lr_scheduler_g
+        self.lr_scheduler_d = lr_scheduler_d
         self.batch_transforms = batch_transforms
 
         # define dataloaders
@@ -225,11 +229,11 @@ class BaseTrainer:
                 self.writer.set_step((epoch - 1) * self.epoch_len + batch_idx)
                 self.logger.debug(
                     "Train Epoch: {} {} Loss: {:.6f}".format(
-                        epoch, self._progress(batch_idx), batch["loss"].item()
+                        epoch, self._progress(batch_idx), batch["gen_loss"].item()
                     )
                 )
                 self.writer.add_scalar(
-                    "learning rate", self.lr_scheduler.get_last_lr()[0]
+                    "learning rate", self.lr_scheduler_g.get_last_lr()[0]
                 )
                 self._log_scalars(self.train_metrics)
                 self._log_batch(batch_idx, batch)
@@ -373,14 +377,14 @@ class BaseTrainer:
                 )
         return batch
 
-    def _clip_grad_norm(self):
+    def _clip_grad_norm(self, model):
         """
         Clips the gradient norm by the value defined in
         config.trainer.max_grad_norm
         """
         if self.config["trainer"].get("max_grad_norm", None) is not None:
             clip_grad_norm_(
-                self.model.parameters(), self.config["trainer"]["max_grad_norm"]
+                model.parameters(), self.config["trainer"]["max_grad_norm"]
             )
 
     @torch.no_grad()
@@ -467,8 +471,10 @@ class BaseTrainer:
             "arch": arch,
             "epoch": epoch,
             "state_dict": self.model.state_dict(),
-            "optimizer": self.optimizer.state_dict(),
-            "lr_scheduler": self.lr_scheduler.state_dict(),
+            "optimizer_g": self.optimizer_g.state_dict(),
+            "optimizer_d": self.optimizer_d.state_dict(),
+            "lr_scheduler_g": self.lr_scheduler_g.state_dict(),
+            "lr_scheduler_d": self.lr_scheduler_d.state_dict(),
             "monitor_best": self.mnt_best,
             "config": self.config,
         }

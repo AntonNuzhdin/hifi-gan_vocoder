@@ -1,5 +1,5 @@
-from src.model.baseline_model import BaselineModel
+from src.model.hifi_gan.model import HIFIGAN
 
 __all__ = [
-    "BaselineModel",
+    "HIFIGAN",
 ]
