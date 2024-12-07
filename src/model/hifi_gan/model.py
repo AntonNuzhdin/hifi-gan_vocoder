@@ -33,26 +33,6 @@ class HIFIGAN(nn.Module):
         }
 
     def discriminator_forward(self, prediction, wav_gt, **batch):
-        # def get_discriminator_output(wav):
-        #     out, feature_maps = self.MPD(wav)
-
-        #     msd_out, msd_feature_maps = self.MSD(prediction)
-
-        #     out.extend(msd_out)
-        #     feature_maps.extend(msd_feature_maps)
-
-        #     return out, feature_maps
-
-        # disc_pred, pred_feature_maps = get_discriminator_output(prediction)
-        # disc_target, target_feature_maps = get_discriminator_output(wav_gt)
-
-        # return {
-        #     "outs_predicted": disc_pred,
-        #     "fmaps_predicted": pred_feature_maps,
-        #     "outs_gt": disc_target,
-        #     "fmaps_gt": target_feature_maps,
-        # }
-
         outs_pred = []
         fmaps_pred = []
         outs_gt = []
