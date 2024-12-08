@@ -1,12 +1,15 @@
 import os
-import argparse
+from scipy.io.wavfile import write
+import numpy as np
 import torch
 import soundfile as sf
 from torch.utils.data import DataLoader
 import hydra
 from omegaconf import DictConfig
+from wvmos import get_wvmos
 
 from src.datasets.custom_dataset import CustomDirDataset
+from src.model import HIFIGAN
 
 
 tacotron2 = torch.hub.load('NVIDIA/DeepLearningExamples:torchhub', 'nvidia_tacotron2', model_math='fp16')
@@ -15,7 +18,6 @@ tacotron2.eval()
 
 utils = torch.hub.load('NVIDIA/DeepLearningExamples:torchhub', 'nvidia_tts_utils')
 
-from src.model import HIFIGAN
 
 
 @hydra.main(config_path="src/configs", config_name="custom_dir")
@@ -27,9 +29,12 @@ def main(cfg: DictConfig):
     if torch.cuda.is_available():
         hifigan = hifigan.cuda()
 
+    print(f'The predictions will be stored in {cfg.model.output_dir}')
     os.makedirs(cfg.model.output_dir, exist_ok=True)
 
-    def text_to_audio(text):
+    model = get_wvmos(cuda=True)
+
+    def text_to_audio(text, output_path):
         sequences, lengths = utils.prepare_input_sequence([text])
         sequences = sequences.to('cuda')
         lengths = lengths.to('cuda')
@@ -38,18 +43,21 @@ def main(cfg: DictConfig):
             mel, _, _ = tacotron2.infer(sequences, lengths)  # mel: (B, n_mels, T)
 
         mel = mel.unsqueeze(1)  # (B, 1, n_mels, T)
-
         with torch.no_grad():
             output = hifigan(mel)
             audio = output["prediction"].cpu().numpy().squeeze(0)
 
-        return audio
+        audio = ((audio + 1) * 127.5).astype(np.uint8)
+
+        write(output_path, 22040, audio[0])
+        print(f"Saved generated audio to {output_path}")
+
+        mos_score = model.calculate_one(output_path)
+        print(f"WV-MOS score for {output_path}: {mos_score}")
 
     if cfg.text is not None:
-        audio = text_to_audio(args.text)
         output_path = os.path.join(cfg.model.output_dir, "generated_from_text.wav")
-        sf.write(output_path, audio, 22050)
-        print(f"Saved generated audio to {output_path}")
+        text_to_audio(cfg.text, output_path)
     else:
         dataset = CustomDirDataset(
             data_dir=cfg.data.data_dir,
@@ -61,10 +69,8 @@ def main(cfg: DictConfig):
             utt_ids = batch_data["utt_id"]
             texts = batch_data["text"]
             for utt_id, text in zip(utt_ids, texts):
-                audio = text_to_audio(text)
                 output_path = os.path.join(cfg.model.output_dir, f"{utt_id}.wav")
-                sf.write(output_path, audio, 22050)
-                print(f"Saved generated audio: {output_path}")
+                text_to_audio(text, output_path)
 
 if __name__ == "__main__":
     main()

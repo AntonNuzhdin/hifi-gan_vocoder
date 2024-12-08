@@ -1,9 +1,9 @@
 model:
-  hifigan_checkpoint: /root/hifi-gan_vocoder/checkpoint-epoch5.pth
-  output_dir: predictions
+  hifigan_checkpoint: /root/hifi-gan_vocoder/saved/train#2-continue/checkpoint-epoch9.pth
+  output_dir: ./predictions
 
 data:
   data_dir: None
   extension: .txt
 
-text: "hello I am anton"
+text: "Dmitri Shostakovich was a Soviet-era Russian composer and pianist who became internationally known after the premiere of his First Symphony in 1926 and thereafter was regarded as a major composer."

@@ -12,6 +12,8 @@ hydra-core
 speechbrain
 librosa
 inflect
+git+https://github.com/AndreevP/wvmos
+soundfile
 
 black
 isort
