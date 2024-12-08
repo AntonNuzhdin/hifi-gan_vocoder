@@ -1,5 +1,5 @@
 model:
-  hifigan_checkpoint: src/weights/convtasnet.pth
+  hifigan_checkpoint: /root/hifi-gan_vocoder/src/weights/hifi.pth
   output_dir: ./predictions
 
 data:

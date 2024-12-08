@@ -3,8 +3,7 @@ import shutil
 
 import gdown
 
-
-URL = "https://drive.google.com/uc?id=12_1NbybiYigqL4pJP8r9ZnaY621dpCaL"
+URL = "https://drive.google.com/uc?id=1_2sbOLFPOLOl6rPHa5UxWYpq0OWphY0H"
 
 
 def download():
