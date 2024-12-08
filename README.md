@@ -21,7 +21,7 @@ Follow these steps to run the project:
 0. Clone repository
 
 ```bash
-https://github.com/AntonNuzhdin/hifi-gan_vocoder
+git clone https://github.com/AntonNuzhdin/hifi-gan_vocoder
 cd hifi-gan_vocoder
 ```
 1. Create and activate env
