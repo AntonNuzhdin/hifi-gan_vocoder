@@ -2,32 +2,33 @@ defaults:
   - model: hifigan
   - writer: wandb
   - metrics: example
-  - datasets: example_onebatchtest
+  - datasets: example
   - dataloader: example
-  # - transforms: example
   - _self_
 optimizer_g:
-  _target_: torch.optim.Adam
-  lr: 3e-4
+  _target_: torch.optim.AdamW
+  lr: 2e-4
+  betas: [0.8, 0.99]
+  weight_decay: 0.01
 optimizer_d:
-  _target_: torch.optim.Adam
-  lr: 3e-4
+  _target_: torch.optim.AdamW
+  lr: 2e-4
+  betas: [0.8, 0.99]
+  weight_decay: 0.01
 lr_scheduler_g:
-  _target_: torch.optim.lr_scheduler.StepLR
-  gamma: 0.9
-  step_size: ${trainer.epoch_len}
+  _target_: torch.optim.lr_scheduler.ExponentialLR
+  gamma: 0.999
 lr_scheduler_d:
-  _target_: torch.optim.lr_scheduler.StepLR
-  gamma: 0.9
-  step_size: ${trainer.epoch_len}
+  _target_: torch.optim.lr_scheduler.ExponentialLR
+  gamma: 0.999
 loss_function:
   _target_: src.loss.HiFiGANLoss
 trainer:
   log_step: 5
   n_epochs: 100
-  epoch_len: 500
+  epoch_len: 300
   device_tensors: ["wav_gt", "mel_gt"] # which tensors should be on device (ex. GPU)
-  resume_from: null # null or path to the checkpoint dir with *.pth and config.yaml
+  resume_from: /root/hifi-gan_vocoder/checkpoint-epoch5.pth # null or path to the checkpoint dir with *.pth and config.yaml
   device: auto # device name or "auto"
   override: False # if True, will override the previous run with the same name
   monitor: "max test_MulticlassAccuracy" # "off" or "max/min metric_name", i.e. our goal is to maximize/minimize metric

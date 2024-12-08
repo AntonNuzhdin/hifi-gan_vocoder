@@ -10,10 +10,6 @@ class Trainer(BaseTrainer):
     def process_batch(self, batch, metrics: MetricTracker):
         batch = self.move_batch_to_device(batch)
 
-        metric_funcs = self.metrics["inference"]
-        if self.is_train:
-            metric_funcs = self.metrics["train"]
-
         gen_outputs = self.model(batch["mel_gt"])
         batch["prediction"] = gen_outputs["prediction"]
 
@@ -33,9 +29,7 @@ class Trainer(BaseTrainer):
 
             d_loss_dict = self.criterion.discriminator_loss(
                 outs_predicted=batch["outs_predicted"],
-                fmaps_predicted=batch["fmaps_predicted"],
-                outs_gt=batch["outs_gt"],
-                fmaps_gt=batch["fmaps_gt"]
+                outs_gt=batch["outs_gt"]
             )
 
             batch["disc_loss"] = d_loss_dict["disc_loss"]
@@ -59,9 +53,10 @@ class Trainer(BaseTrainer):
             batch["fmaps_gt"] = disc_out_2["fmaps_gt"]
 
             g_loss_dict = self.criterion.generator_loss(
+                mel_gt=batch["mel_gt"],
+                prediction=batch["prediction"],
                 outs_predicted=batch["outs_predicted"],
                 fmaps_predicted=batch["fmaps_predicted"],
-                outs_gt=batch["outs_gt"],
                 fmaps_gt=batch["fmaps_gt"]
             )
 
@@ -71,16 +66,12 @@ class Trainer(BaseTrainer):
             self._clip_grad_norm(self.model.generator)
             self.optimizer_g.step()
 
-            if self.lr_scheduler_d is not None:
-                self.lr_scheduler_d.step()
-            if self.lr_scheduler_g is not None:
-                self.lr_scheduler_g.step()
-
         for loss_name in self.config.writer.loss_names:
             if loss_name in batch:
                 metrics.update(loss_name, batch[loss_name].item())
 
         return batch
+
 
     def _log_batch(self, batch_idx, batch, mode="train"):
         """
@@ -99,8 +90,9 @@ class Trainer(BaseTrainer):
 
         # logging scheme might be different for different partitions
         if mode == "train":  # the method is called only every self.log_step steps
-            # Log Stuff
-            pass
-        else:
-            # Log Stuff
-            pass
+            self._log_predictions(batch['prediction'], batch['wav_gt'])
+
+
+    def _log_predictions(self, pred, gt):
+        self.writer.add_audio("Audio1", gt[0], 22050)
+        self.writer.add_audio("Predicted1", pred[0], 22050)

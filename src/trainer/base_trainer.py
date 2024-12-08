@@ -124,12 +124,12 @@ class BaseTrainer:
         self.train_metrics = MetricTracker(
             *self.config.writer.loss_names,
             "grad_norm",
-            *[m.name for m in self.metrics["train"]],
+            None,
             writer=self.writer,
         )
         self.evaluation_metrics = MetricTracker(
             *self.config.writer.loss_names,
-            *[m.name for m in self.metrics["inference"]],
+            None,
             writer=self.writer,
         )
 
@@ -175,8 +175,8 @@ class BaseTrainer:
             logs.update(result)
 
             # print logged information to the screen
-            for key, value in logs.items():
-                self.logger.info(f"    {key:15s}: {value}")
+            # for key, value in logs.items():
+            #     self.logger.info(f"    {key:15s}: {value}")
 
             # evaluate model performance according to configured metric,
             # save best checkpoint as model_best
@@ -189,6 +189,12 @@ class BaseTrainer:
 
             if stop_process:  # early_stop
                 break
+
+            if self.lr_scheduler_d is not None:
+                self.lr_scheduler_d.step()
+            if self.lr_scheduler_g is not None:
+                self.lr_scheduler_g.step()
+
 
     def _train_epoch(self, epoch):
         """
@@ -492,44 +498,26 @@ class BaseTrainer:
             self.logger.info("Saving current best: model_best.pth ...")
 
     def _resume_checkpoint(self, resume_path):
-        """
-        Resume from a saved checkpoint (in case of server crash, etc.).
-        The function loads state dicts for everything, including model,
-        optimizers, etc.
-
-        Notice that the checkpoint should be located in the current experiment
-        saved directory (where all checkpoints are saved in '_save_checkpoint').
-
-        Args:
-            resume_path (str): Path to the checkpoint to be resumed.
-        """
         resume_path = str(resume_path)
         self.logger.info(f"Loading checkpoint: {resume_path} ...")
         checkpoint = torch.load(resume_path, self.device)
         self.start_epoch = checkpoint["epoch"] + 1
         self.mnt_best = checkpoint["monitor_best"]
 
-        # load architecture params from checkpoint.
+        # Check architecture configuration
         if checkpoint["config"]["model"] != self.config["model"]:
             self.logger.warning(
                 "Warning: Architecture configuration given in the config file is different from that "
                 "of the checkpoint. This may yield an exception when state_dict is loaded."
             )
+
+        # Load model state
         self.model.load_state_dict(checkpoint["state_dict"])
 
-        # load optimizer state from checkpoint only when optimizer type is not changed.
-        if (
-            checkpoint["config"]["optimizer"] != self.config["optimizer"]
-            or checkpoint["config"]["lr_scheduler"] != self.config["lr_scheduler"]
-        ):
-            self.logger.warning(
-                "Warning: Optimizer or lr_scheduler given in the config file is different "
-                "from that of the checkpoint. Optimizer and scheduler parameters "
-                "are not resumed."
-            )
-        else:
-            self.optimizer.load_state_dict(checkpoint["optimizer"])
-            self.lr_scheduler.load_state_dict(checkpoint["lr_scheduler"])
+        self.optimizer_g.load_state_dict(checkpoint["optimizer_g"])
+        self.optimizer_d.load_state_dict(checkpoint["optimizer_d"])
+        self.lr_scheduler_g.load_state_dict(checkpoint["lr_scheduler_g"])
+        self.lr_scheduler_d.load_state_dict(checkpoint["lr_scheduler_d"])
 
         self.logger.info(
             f"Checkpoint loaded. Resume training from epoch {self.start_epoch}"

@@ -1,0 +1,9 @@
+model:
+  hifigan_checkpoint: /root/hifi-gan_vocoder/checkpoint-epoch5.pth
+  output_dir: predictions
+
+data:
+  data_dir: None
+  extension: .txt
+
+text: "hello I am anton"

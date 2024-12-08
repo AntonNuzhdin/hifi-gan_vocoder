@@ -13,6 +13,7 @@ def collate_fn(batch):
     mel_gt = []
 
     for item in batch:
+        audio = item["audio"]
         if audio.dim() == 2 and audio.size(0) == 1:
             audio = audio.squeeze(0)
 
