@@ -1,4 +1,4 @@
-# Project (Audio-Visual Source Separation)
+# HIFI-GAN
 
 <p align="center">
   <a href="#about">About</a> •
