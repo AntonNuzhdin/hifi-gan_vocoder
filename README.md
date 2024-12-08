@@ -55,7 +55,7 @@ To custimize the synthesizing, feel free to edit the src/configs/custom_dir.yaml
 
 ```
 model:
-  hifigan_checkpoint: src/weights/convtasnet.pth
+  hifigan_checkpoint: src/weights/convtasnet.pth # the path to your weights (in case you run download.py, it stores in src/weights/hifi.pth)
   output_dir: ./predictions # Where to store the predictions
 
 data:
